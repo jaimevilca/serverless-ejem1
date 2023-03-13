@@ -1,0 +1,80 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'PracticeServerless
+
+  Sample SAM Template for PracticeServerless
+
+  '
+Globals:
+  Function:
+    Timeout: 20
+    MemorySize: 128
+Resources:
+  DbAppFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: DbAppFunction
+      Handler: practice.App::handleRequest
+      Runtime: java11
+      Architectures:
+      - x86_64
+      MemorySize: 512
+      Environment:
+        Variables:
+          DYNAMODB_ENDPOINT: null
+          JAVA_TOOL_OPTIONS: -XX:+TieredCompilation -XX:TieredStopAtLevel=1
+      Events:
+        lambdaGetAllUsers:
+          Type: Api
+          Properties:
+            Path: /books/
+            Method: GET
+        lambdaAddUser:
+          Type: Api
+          Properties:
+            Path: /books/
+            Method: POST
+        lambdaUpdateUser:
+          Type: Api
+          Properties:
+            Path: /books/{bookid}
+            Method: PUT
+        lambdaDeleteUser:
+          Type: Api
+          Properties:
+            Path: /books/{bookid}
+            Method: DELETE
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: UsersTable
+    Metadata:
+      SamResourceId: DbAppFunction
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: books
+      AttributeDefinitions:
+      - AttributeName: bookid
+        AttributeType: S
+      - AttributeName: title
+        AttributeType: S
+      - AttributeName: resume
+        AttributeType: S
+      - AttributeName: author
+        AttributeType: S
+      - AttributeName: publishing
+        AttributeType: S
+      - AttributeName: year
+        AttributeType: S
+      KeySchema:
+      - AttributeName: userid
+        KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+Outputs:
+  PublicApi:
+    Description: API Gateway endpoint URL for ManageFiles App
+    Value:
+      Fn::Sub: https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/

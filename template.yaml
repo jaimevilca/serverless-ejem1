@@ -1,0 +1,83 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  PracticeServerless
+
+  Sample SAM Template for PracticeServerless
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 20
+    MemorySize: 128
+
+Resources:
+  DbAppFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: PracticeServerless
+      Handler: practice.App::handleRequest
+      Runtime: java11
+      Architectures:
+        - x86_64
+      MemorySize: 512
+      Environment: # More info about Env Vars: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#environment-object
+        Variables:
+          DYNAMODB_ENDPOINT:
+          JAVA_TOOL_OPTIONS: -XX:+TieredCompilation -XX:TieredStopAtLevel=1 # More info about tiered compilation https://aws.amazon.com/blogs/compute/optimizing-aws-lambda-function-performance-for-java/
+      Events:
+        lambdaGetAllUsers:
+          Type: Api
+          Properties:
+            Path: /books/
+            Method: GET
+        lambdaAddUser:
+          Type: Api
+          Properties:
+            Path: /books/
+            Method: POST
+        lambdaUpdateUser:
+          Type: Api
+          Properties:
+            Path: /books/{bookid}
+            Method: PUT
+        lambdaDeleteUser:
+          Type: Api
+          Properties:
+            Path: /books/{bookid}
+            Method: DELETE
+      Policies:
+        # Policies to allow the execution of the indicated actions to the table described in Resource
+        - DynamoDBCrudPolicy:
+            TableName:
+              !Ref UsersTable
+  UsersTable:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      TableName: books
+      AttributeDefinitions:
+        - AttributeName: bookid
+          AttributeType: S
+        - AttributeName: title
+          AttributeType: S
+        - AttributeName: resume
+          AttributeType: S
+        - AttributeName: author
+          AttributeType: S
+        - AttributeName: publishing
+          AttributeType: S
+        - AttributeName: year
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userid
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  PublicApi:
+    Description: "API Gateway endpoint URL for ManageFiles App"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
