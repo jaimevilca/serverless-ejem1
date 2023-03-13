@@ -58,18 +58,8 @@ Resources:
       AttributeDefinitions:
         - AttributeName: bookid
           AttributeType: S
-        - AttributeName: title
-          AttributeType: S
-        - AttributeName: resume
-          AttributeType: S
-        - AttributeName: author
-          AttributeType: S
-        - AttributeName: publishing
-          AttributeType: S
-        - AttributeName: year
-          AttributeType: S
       KeySchema:
-        - AttributeName: userid
+        - AttributeName: bookid
           KeyType: HASH
       ProvisionedThroughput:
         ReadCapacityUnits: 5
