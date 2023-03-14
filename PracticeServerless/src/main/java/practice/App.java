@@ -72,7 +72,7 @@ public class App implements RequestHandler<APIGatewayProxyRequestEvent, APIGatew
 
             Map<String,Object> user = mapper.readValue(data, new TypeReference<HashMap<String, Object>>() {});
 
-            Item item = bookRepository.addUser(
+            Item item = bookRepository.addBook(
                     (String)user.get("title"),
                     (String)user.get("resume"),
                     (String)user.get("author"),
@@ -97,7 +97,7 @@ public class App implements RequestHandler<APIGatewayProxyRequestEvent, APIGatew
 
             Map<String,Object> user = mapper.readValue(data, new TypeReference<HashMap<String, Object>>() {});
 
-            UpdateItemOutcome res = bookRepository.updateUser(
+            UpdateItemOutcome res = bookRepository.updateBook(
                     (String)user.get("bookid"),
                     (String)user.get("title"),
                     (String)user.get("resume"),
@@ -116,7 +116,7 @@ public class App implements RequestHandler<APIGatewayProxyRequestEvent, APIGatew
     private APIGatewayProxyResponseEvent deleteBook(String bookid) {
 
         try {
-            DeleteItemOutcome res = bookRepository.deleteUser(bookid);
+            DeleteItemOutcome res = bookRepository.deleteBook(bookid);
             String responseBody = mapper.writeValueAsString(res.getDeleteItemResult());
             return createResponse(200, responseBody);
         } catch (Exception e) {

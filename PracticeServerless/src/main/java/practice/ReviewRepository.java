@@ -8,16 +8,18 @@ import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.document.utils.NameMap;
 import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
-import com.amazonaws.services.dynamodbv2.model.*;
+import com.amazonaws.services.dynamodbv2.model.ReturnValue;
+import com.amazonaws.services.dynamodbv2.model.ScanRequest;
+import com.amazonaws.services.dynamodbv2.model.ScanResult;
 
 import java.util.UUID;
 
-public class BookRepository {
-    private static final String TABLE_NAME = "books";
+public class ReviewRepository {
+    private static final String TABLE_NAME = "reviews";
     private final Table table;
     private AmazonDynamoDB dynamoDB;
 
-    public BookRepository() {
+    public ReviewRepository() {
 
         String dynamoDbEndpoint = System.getenv("DYNAMODB_ENDPOINT");
 
@@ -39,7 +41,7 @@ public class BookRepository {
         table = new DynamoDB(dynamoDB).getTable(TABLE_NAME);
     }
 
-    public ScanResult getAllBooks() {
+    public ScanResult getAllReviews() {
 
         ScanRequest scanRequest = new ScanRequest()
                 .withTableName(TABLE_NAME);
@@ -47,39 +49,33 @@ public class BookRepository {
         return dynamoDB.scan(scanRequest);
     }
 
-    public Item addBook(String title, String resume, String author, String publishing, String year) {
+    public Item addReview(String user, String text, String punctuation) {
         Item item = new Item()
-                .withPrimaryKey("bookid", UUID.randomUUID().toString())
-                .withString("title", title)
-                .withString("resume", resume)
-                .withString("author", author)
-                .withString("publishing", publishing)
-                .withString("year", year);
+                .withPrimaryKey("reviewid", UUID.randomUUID().toString())
+                .withString("user", user)
+                .withString("text", text)
+                .withString("punctuation", punctuation);
         table.putItem(item);
 
         return item;
     }
 
-    public UpdateItemOutcome updateBook(String bookid, String title, String resume, String author, String publishing, String year) {
+    public UpdateItemOutcome updateReview(String reviewid, String user, String text, String punctuation) {
         UpdateItemSpec updateItemSpec = new UpdateItemSpec()
-                .withPrimaryKey("bookid", bookid)
-                .withUpdateExpression("set #ti = :t, resume = :r, author = :a, publishing = :p, year = :y")
-                .withNameMap(new NameMap().with("#ti", "title"))
+                .withPrimaryKey("reviewid", reviewid)
+                .withUpdateExpression("set #ti = :t, text = :r, punctuation = :a, publishing = :p, year = :y")
+                .withNameMap(new NameMap().with("#ti", "user"))
                 .withValueMap(new ValueMap()
-                        .withString(":t", title)
-                        .withString(":r", resume)
-                        .withString(":a", author)
-                        .withString(":p", publishing)
-                        .withString(":y", year))
+                        .withString(":t", user)
+                        .withString(":r", text)
+                        .withString(":a", punctuation))
                 .withReturnValues("ALL_OLD");
         return table.updateItem(updateItemSpec);
     }
 
-    public DeleteItemOutcome deleteBook(String bookid) {
+    public DeleteItemOutcome deleteReview(String reviewid) {
         DeleteItemSpec deleteItemSpec = new DeleteItemSpec()
-                .withPrimaryKey("userid", bookid)
-                //.withConditionExpression("userid = :userid")
-                //.withValueMap(new ValueMap().withString(":userid", userid))
+                .withPrimaryKey("reviewid", reviewid)
                 .withReturnValues(ReturnValue.ALL_OLD);
         return table.deleteItem(deleteItemSpec);
     }
