@@ -8,10 +8,13 @@ import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.document.utils.NameMap;
 import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanResult;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 public class ReviewRepository {
@@ -79,6 +82,18 @@ public class ReviewRepository {
                 .withPrimaryKey("reviewid", reviewid)
                 .withReturnValues(ReturnValue.ALL_OLD);
         return table.deleteItem(deleteItemSpec);
+    }
+
+    public ScanResult getReviewsByBookId(String id) {
+        Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
+        expressionAttributeValues.put(":b", new AttributeValue().withS(id));
+
+        ScanRequest scanRequest = new ScanRequest()
+                .withTableName(TABLE_NAME)
+                .withFilterExpression("bookId = :b")
+                .withExpressionAttributeValues(expressionAttributeValues);
+
+        return dynamoDB.scan(scanRequest);
     }
 
 }

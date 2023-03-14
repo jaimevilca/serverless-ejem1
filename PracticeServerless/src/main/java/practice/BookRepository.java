@@ -10,6 +10,8 @@ import com.amazonaws.services.dynamodbv2.document.utils.NameMap;
 import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
 import com.amazonaws.services.dynamodbv2.model.*;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 public class BookRepository {
@@ -24,7 +26,7 @@ public class BookRepository {
         if (dynamoDbEndpoint != null && !dynamoDbEndpoint.equals("")) {
 
             System.out.println("Local DynamoDB");
-            System.out.println("DYNAMODB_ENDPOINT="+dynamoDbEndpoint);
+            System.out.println("DYNAMODB_ENDPOINT=" + dynamoDbEndpoint);
 
             dynamoDB = AmazonDynamoDBClientBuilder.standard()
                     .withEndpointConfiguration(
@@ -84,34 +86,10 @@ public class BookRepository {
         return table.deleteItem(deleteItemSpec);
     }
 
-    public Map<String, Object>  getBookById(String bookid) {
-        Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
-        expressionAttributeValues.put(":bookid", new AttributeValue().withS(bookId));
+    public Item getBookById(String id) {
+        return table.getItem("bookid", id);
+    }
 
-        ScanRequest scanRequest = new ScanRequest()
-                .withTableName(TABLE_NAME)
-                .withFilterExpression("id = :bookId")
-                .withExpressionAttributeValues(expressionAttributeValues);
-
-        expressionAttributeValues = new HashMap<>();
-        expressionAttributeValues.put(":bookId", new AttributeValue().withS(bookId));
-
-        scanRequest = new ScanRequest()
-                .withTableName("reviews")
-                .withIndexName("BookCommentsIndex")
-                .withFilterExpression("bookid = :bookid")
-                .withExpressionAttributeValues(expressionAttributeValues);
-
-        result = dynamoDB.scan(scanRequest);
-        items = result.getItems();
-
-        // Construir la respuesta
-        Map<String, Object> response = new HashMap<>();
-        response.put("book", new Item().withMap(book));
-        response.put("comments", items.stream().map(Item::new).collect(Collectors.toList()));
-
-        return response;
-     }
 
 }
 

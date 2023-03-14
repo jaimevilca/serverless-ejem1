@@ -43,16 +43,40 @@ public class App implements RequestHandler<APIGatewayProxyRequestEvent, APIGatew
         }
     }
 
-    private APIGatewayProxyResponseEvent getBookById(String bookid) {
+    private APIGatewayProxyResponseEvent getBookById(String bookId) {
 
         try {
-            Map<String, Object>  res = bookRepository.getBookById(bookid);
+            Item book = bookRepository.getBookById(bookId);
 
-            String responseBody = mapper.writerWithDefaultPrettyPrinter()
-                    .writeValueAsString(res);
+            ScanResult reviews = reviewRepository.getReviewsByBookId(bookId);
 
+            List<Item> reviewList = ItemUtils.toItemList(reviews.getItems());
+
+            List<Map<String, Object>> reviewValues = new ArrayList<>();
+            for (Item review : reviewList) {
+                var value = new HashMap<String, Object>();
+                value.put("reviewid", review.get("reviewid"));
+                value.put("user", review.get("user"));
+                value.put("text", review.get("text"));
+                value.put("punctuation", review.get("punctuation"));
+                reviewValues.add(value);
+            }
+
+            Map<String, Object> bookValue = new HashMap<>();
+
+            bookValue.put("bookid", book.get("bookid"));
+            bookValue.put("title", book.get("title"));
+            bookValue.put("resume", book.get("resume"));
+            bookValue.put("author", book.get("author"));
+            bookValue.put("publishing", book.get("publishing"));
+            bookValue.put("year", book.get("year"));
+            bookValue.put("reviews", reviewValues);
+
+
+            String responseBody = mapper.writeValueAsString(bookValue);
             return createResponse(200, responseBody);
         } catch (Exception e) {
+
             System.out.println(e);
             return createResponse(500, e.getMessage());
         }
@@ -94,11 +118,11 @@ public class App implements RequestHandler<APIGatewayProxyRequestEvent, APIGatew
             if (requestMap.containsKey("title") && requestMap.containsKey("author") && requestMap.containsKey("resume")) {
                 // Si se han proporcionado los datos de un libro, agrega el libro
                 Item item = bookRepository.addBook(
-                        (String)user.requestMap("title"),
-                        (String)user.requestMap("resume"),
-                        (String)user.requestMap("author"),
-                        (String)user.requestMap("publishing"),
-                        (String)user.requestMap("year"));
+                        (String)requestMap.get("title"),
+                        (String)requestMap.get("resume"),
+                        (String)requestMap.get("author"),
+                        (String)requestMap.get("publishing"),
+                        (String)requestMap.get("year"));
 
 
                 String id = (String) item.get("bookid");
