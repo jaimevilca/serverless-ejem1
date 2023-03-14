@@ -49,9 +49,10 @@ public class ReviewRepository {
         return dynamoDB.scan(scanRequest);
     }
 
-    public Item addReview(String user, String text, String punctuation) {
+    public Item addReview(String user, String text, String punctuation , String bookId) {
         Item item = new Item()
                 .withPrimaryKey("reviewid", UUID.randomUUID().toString())
+                .withString("bookId", bookId)
                 .withString("user", user)
                 .withString("text", text)
                 .withString("punctuation", punctuation);

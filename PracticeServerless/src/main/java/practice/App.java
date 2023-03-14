@@ -18,21 +18,43 @@ public class App implements RequestHandler<APIGatewayProxyRequestEvent, APIGatew
 
     private final BookRepository bookRepository = new BookRepository();
 
+    private final ReviewRepository reviewRepository = new ReviewRepository();
+
     private final ObjectMapper mapper = new ObjectMapper();
 
     public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent event, Context context) {
 
         switch (event.getHttpMethod()) {
             case "GET":
-                return getAllBooks();
+                if (event.getPathParameters() != null && event.getPathParameters().containsKey("bookid")) {
+                    String bookId = event.getPathParameters().get("bookid");
+                    return getBookById(bookId);
+                } else {
+                    return getAllBooks();
+                }
             case "POST":
-                return addBook(event.getBody());
+                return addBookOrComment(event.getPathParameters().get("bookid"),event.getBody());
             case "PUT":
                 return updateBook(event.getPathParameters().get("bookid"), event.getBody());
             case "DELETE":
                 return deleteBook(event.getPathParameters().get("bookid"));
             default:
                 return createResponse(400, "Unsupported method " + event.getHttpMethod());
+        }
+    }
+
+    private APIGatewayProxyResponseEvent getBookById(String bookid) {
+
+        try {
+            Map<String, Object>  res = bookRepository.getBookById(bookid);
+
+            String responseBody = mapper.writerWithDefaultPrettyPrinter()
+                    .writeValueAsString(res);
+
+            return createResponse(200, responseBody);
+        } catch (Exception e) {
+            System.out.println(e);
+            return createResponse(500, e.getMessage());
         }
     }
 
@@ -64,27 +86,48 @@ public class App implements RequestHandler<APIGatewayProxyRequestEvent, APIGatew
         }
     }
 
-    private APIGatewayProxyResponseEvent addBook(String data) {
+    private APIGatewayProxyResponseEvent addBookOrComment(String bookId, String data) {
 
         try {
-            System.out.println("Esto sale en pantalla\n");
-            System.out.println(data + "\n");
+            Map<String,Object> requestMap = mapper.readValue(data, new TypeReference<HashMap<String, Object>>() {});
 
-            Map<String,Object> user = mapper.readValue(data, new TypeReference<HashMap<String, Object>>() {});
+            if (requestMap.containsKey("title") && requestMap.containsKey("author") && requestMap.containsKey("resume")) {
+                // Si se han proporcionado los datos de un libro, agrega el libro
+                Item item = bookRepository.addBook(
+                        (String)user.requestMap("title"),
+                        (String)user.requestMap("resume"),
+                        (String)user.requestMap("author"),
+                        (String)user.requestMap("publishing"),
+                        (String)user.requestMap("year"));
 
-            Item item = bookRepository.addBook(
-                    (String)user.get("title"),
-                    (String)user.get("resume"),
-                    (String)user.get("author"),
-                    (String)user.get("publishing"),
-                    (String)user.get("year"));
 
+                String id = (String) item.get("bookid");
 
-            String id = (String) item.get("bookid");
+                String responseBody = mapper.writeValueAsString(id);
+                return createResponse(201, responseBody);
 
-            String responseBody = mapper.writeValueAsString(id);
+            } else if (requestMap.containsKey("user") && requestMap.containsKey("text")) {
+                // Si se han proporcionado los datos de un comentario, agrega el comentario al libro con el ID bookId
+                // Aquí puedes agregar el comentario al libro con el ID bookId
+                Item item = reviewRepository.addReview(
+                        (String)requestMap.get("bookid"),
+                        (String)requestMap.get("user"),
+                        (String)requestMap.get("text"),
+                        (String)requestMap.get("punctuation") );
 
-            return createResponse(201, responseBody);
+                // Devuelve una respuesta con el código de estado 201 (creado)
+                String id = (String) item.get("bookid");
+
+                String responseBody = mapper.writeValueAsString(id);
+                return createResponse(201, responseBody);
+            } else {
+                // Si no se han proporcionado los datos necesarios, devuelve una respuesta con el código de estado 400 (solicitud incorrecta)
+                APIGatewayProxyResponseEvent response = new APIGatewayProxyResponseEvent();
+                response.setStatusCode(400);
+                response.setBody("Bad request: missing required parameters");
+                return response;
+            }
+
         } catch (Exception e) {
             System.out.println(e);
             return createResponse(500, e.getMessage());
